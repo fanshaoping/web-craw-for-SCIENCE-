@@ -1,0 +1,37 @@
+# -*- coding: utf-8 -*-
+
+from bs4 import BeautifulSoup
+import re
+import pymysql
+
+conn=pymysql.connect(user='root',passwd='XXX',host='127.0.0.1',db='webcrawling',charset='utf8')  #charset='utf8' could show chinese characters
+cur=conn.cursor()
+
+science_html=urlopen("http://science.sciencemag.org/") #content table
+bsobj=BeautifulSoup(science_html,"lxml")
+#get issue,date
+science_issue=bsobj.find("div",{"class":"beta section-title__tagline"})
+#for date in issue:
+print(science_issue.get_text()) 
+
+title_list=bsobj.findAll('div',{"class":"media__body"})   #ץget content
+for i in range(len(title_list)):
+    #get content
+    title=title_list[i].find("a",{"class":"highwire-cite-linked-title"})
+    #get content's url
+    title_link="http://science.sciencemag.org"+title.attrs['href']
+    #print(i,content.get_text(),link)
+    #open content's url and find whether keywords in it 
+    title_html=urlopen(title_link)
+    bsobj=BeautifulSoup(title_html,"lxml")
+    content_summary=bsobj.findAll("div",{"class":"highwire-markup"})
+    for j in range(len(content_summary)):
+        summary=content_summary[j].findAll("p",id=re.compile("p-."))
+        for z in range(len(summary)):
+            
+            # write into database
+            cur.execute("INSERT INTO science_content(Title,Issue,URL,Summary) VALUES (\"%s\",\"%s\",\"%s\",\"%s\")", (content.get_text(),science_issue.get_text(),content_link,summary[z].get_text()))
+              
+            print(cur.fetchone())
+cur.close()
+conn.close()
